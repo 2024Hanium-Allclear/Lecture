@@ -5,12 +5,12 @@ on:
     branches: [ "main" ]
 
 env:
-  AWS_REGION: ap-northeast-2                   # AWS region, e.g. us-west-1
-  ECR_REPOSITORY: lecture-repo                  # Amazon ECR repository name
-  ECS_SERVICE: lecture-service              # Amazon ECS service name
-  ECS_CLUSTER: allclear_cluster                 # Amazon ECS cluster name
-  CONTAINER_NAME: lecture-container           # set this to the name of the container in the containerDefinitions section of your task definition
-  KEY_ALIAS: spring                          # Define the key alias here
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: lecture-repo
+  ECS_SERVICE: lecture-service
+  ECS_CLUSTER: allclear_cluster
+  CONTAINER_NAME: lecture-container
+  KEY_ALIAS: spring
 
 jobs:
   deploy:
@@ -38,27 +38,26 @@ jobs:
           mkdir -p resources
           cd ./resources
           touch ./application.yml
-          ls *
           echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
-        shell: bash
-
-      - name: Save CA certificate to file
-        run: echo "${{ secrets.CA_CERT_PEM }}" > exampleCA.pem
 
       - name: Save private key to file
         run: echo "${{ secrets.PRIVATE_KEY_PEM }}" > privateKey.pem
 
+      - name: Save certificate to file
+        run: echo "${{ secrets.CERTIFICATE_PEM }}" > certificate.pem
+
       - name: Convert PEM to PKCS12 keystore
         run: |
-          openssl pkcs12 -export -in certificate.pem -inkey privateKey.pem -out keystore.p12 -name ${{ env.KEY_ALIAS }} -passout pass:your-password
+          openssl rsa -in privateKey.pem -out privateKey_unencrypted.pem -passin pass:${{ secrets.PRIVATE_KEY_PASSPHRASE }}
+          openssl pkcs12 -export -in certificate.pem -inkey privateKey_unencrypted.pem -out keystore.p12 -name ${{ env.KEY_ALIAS }} -passout pass:${{ secrets.KEYSTORE_PASSWORD }}
           cp keystore.p12 src/main/resources/keystore.p12
 
       - name: Build with Gradle
         run: ./gradlew build -x test
-        shell: bash
 
       - name: Add CA certificate to Java keystore
         run: |
+          echo "${{ secrets.CA_CERT_PEM }}" > exampleCA.pem
           sudo keytool -import -noprompt -trustcacerts -alias exampleCA -file exampleCA.pem -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit
 
       - name: Configure AWS credentials
