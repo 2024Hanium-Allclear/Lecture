@@ -33,30 +33,34 @@ jobs:
       - name: Create application.yml
         if: contains(github.ref, 'main')
         run: |
-          cd ./src/main
-          mkdir -p resources 
-          cd ./resources
-          touch ./application.yml
-          echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
+          mkdir -p ./src/main/resources
+          echo "${{ secrets.APPLICATION_YML }}" > ./src/main/resources/application.yml
         shell: bash
+
+      - name: Add CA certificate
+        run: |
+          echo "${{ secrets.CA_CERT }}" > ca-cert.pem
+          keytool -import -alias custom-ca -file ca-cert.pem -keystore custom-keystore.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -noprompt
+        shell: bash
+
+      - name: Generate keystore
+        run: |
+          keytool -genkeypair -alias mykey -keyalg RSA -keysize 2048 -keystore keystore.p12 -storetype PKCS12 -validity 365 -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} -dname "${{ secrets.DNAME }}"
+
+      - name: Verify keystore.p12 exists in root
+        run: |
+          if [ -f "keystore.p12" ]; then
+            echo "keystore.p12 was successfully created in the root directory."
+          else
+            echo "keystore.p12 not found in the root directory."
+            exit 1
+          fi
+        shell: bash
+
 
       - name: Build with Gradle
         run: ./gradlew build -x test
         shell: bash
-
-      - name: Save certificates to files
-        run: |
-          echo "${{ secrets.CERTIFICATE }}" > certificate.crt
-          echo "${{ secrets.CERTIFICATE_CHAIN }}" > certificate_chain.crt
-          echo "${{ secrets.PRIVATE_KEY }}" > private_key.key
-
-      - name: Combine certificates into a PEM file
-        run: |
-          cat certificate.crt certificate_chain.crt > fullchain.pem
-
-      - name: Add CA certificate to Java keystore
-        run: |
-          sudo keytool -import -noprompt -trustcacerts -alias exampleCA -file fullchain.pem -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
