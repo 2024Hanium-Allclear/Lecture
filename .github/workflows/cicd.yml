@@ -10,6 +10,7 @@ env:
   ECS_SERVICE: lecture-service              # Amazon ECS service name
   ECS_CLUSTER: allclear_cluster                 # Amazon ECS cluster name
   CONTAINER_NAME: lecture-container           # set this to the name of the container in the containerDefinitions section of your task definition
+  KEY_ALIAS: spring                          # Define the key alias here
 
 jobs:
   deploy:
@@ -30,23 +31,31 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: create application.yml
+      - name: Create application.yml
         if: contains(github.ref, 'main')
         run: |
           cd ./src/main
-          mkdir -p resources 
+          mkdir -p resources
           cd ./resources
           touch ./application.yml
           ls *
           echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
         shell: bash
 
+      - name: Save CA certificate to file
+        run: echo "${{ secrets.CA_CERT_PEM }}" > exampleCA.pem
+
+      - name: Save private key to file
+        run: echo "${{ secrets.PRIVATE_KEY_PEM }}" > privateKey.pem
+
+      - name: Convert PEM to PKCS12 keystore
+        run: |
+          openssl pkcs12 -export -in certificate.pem -inkey privateKey.pem -out keystore.p12 -name ${{ env.KEY_ALIAS }} -passout pass:your-password
+          cp keystore.p12 src/main/resources/keystore.p12
+
       - name: Build with Gradle
         run: ./gradlew build -x test
         shell: bash
-
-      - name: Save CA certificate to file
-        run: echo "${{ secrets.CA_CERT_PEM }}" > exampleCA.pem
 
       - name: Add CA certificate to Java keystore
         run: |
