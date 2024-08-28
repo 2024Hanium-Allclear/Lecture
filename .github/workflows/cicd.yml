@@ -10,7 +10,6 @@ env:
   ECS_SERVICE: lecture-service
   ECS_CLUSTER: allclear_cluster
   CONTAINER_NAME: lecture-container
-  KEY_ALIAS: spring
 
 jobs:
   deploy:
@@ -35,30 +34,29 @@ jobs:
         if: contains(github.ref, 'main')
         run: |
           cd ./src/main
-          mkdir -p resources
+          mkdir -p resources 
           cd ./resources
           touch ./application.yml
           echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
-
-      - name: Save private key to file
-        run: echo "${{ secrets.PRIVATE_KEY_PEM }}" > privateKey.pem
-
-      - name: Save certificate to file
-        run: echo "${{ secrets.CERTIFICATE_PEM }}" > certificate.pem
-
-      - name: Convert PEM to PKCS12 keystore
-        run: |
-          openssl rsa -in privateKey.pem -out privateKey_unencrypted.pem -passin pass:${{ secrets.PRIVATE_KEY_PASSPHRASE }}
-          openssl pkcs12 -export -in certificate.pem -inkey privateKey_unencrypted.pem -out keystore.p12 -name ${{ env.KEY_ALIAS }} -passout pass:${{ secrets.KEYSTORE_PASSWORD }}
-          cp keystore.p12 src/main/resources/keystore.p12
+        shell: bash
 
       - name: Build with Gradle
         run: ./gradlew build -x test
+        shell: bash
+
+      - name: Save certificates to files
+        run: |
+          echo "${{ secrets.CERTIFICATE }}" > certificate.crt
+          echo "${{ secrets.CERTIFICATE_CHAIN }}" > certificate_chain.crt
+          echo "${{ secrets.PRIVATE_KEY }}" > private_key.key
+
+      - name: Combine certificates into a PEM file
+        run: |
+          cat certificate.crt certificate_chain.crt > fullchain.pem
 
       - name: Add CA certificate to Java keystore
         run: |
-          echo "${{ secrets.CA_CERT_PEM }}" > exampleCA.pem
-          sudo keytool -import -noprompt -trustcacerts -alias exampleCA -file exampleCA.pem -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit
+          sudo keytool -import -noprompt -trustcacerts -alias exampleCA -file fullchain.pem -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
