@@ -45,6 +45,13 @@ jobs:
         run: ./gradlew build -x test
         shell: bash
 
+      - name: Save CA certificate to file
+        run: echo "${{ secrets.CA_CERT_PEM }}" > exampleCA.pem
+
+      - name: Add CA certificate to Java keystore
+        run: |
+          sudo keytool -import -noprompt -trustcacerts -alias exampleCA -file exampleCA.pem -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
