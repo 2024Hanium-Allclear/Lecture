@@ -40,12 +40,30 @@ jobs:
       - name: Add CA certificate
         run: |
           echo "${{ secrets.CA_CERT }}" > ca-cert.pem
-          keytool -import -alias custom-ca -file ca-cert.pem -keystore custom-keystore.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -noprompt
+          echo "${{ secrets.PRIVATE_KEY }}" > private-key.pem
+          echo "${{ secrets.CA_CHAIN }}" > ca-chain.pem
+          openssl pkcs12 -export \
+            -in ca-cert.pem \
+            -inkey private-key.pem \
+            -out keystore.p12 \
+            -name Hanium \
+            -CAfile ca-chain.pem \
+            -caname root \
+            -passin pass:${{ secrets.KEYSTORE_PASSWORD }} \
+            -passout pass:${{ secrets.KEYSTORE_PASSWORD }}
         shell: bash
 
       - name: Generate keystore
         run: |
-          keytool -genkeypair -alias mykey -keyalg RSA -keysize 2048 -keystore keystore.p12 -storetype PKCS12 -validity 365 -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} -dname "${{ secrets.DNAME }}"
+          keytool -importkeystore \
+            -srckeystore keystore.p12 \
+            -srcstoretype PKCS12 \
+            -srcstorepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -destkeystore hanium.jks \
+            -deststoretype JKS \
+            -deststorepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -destkeypass ${{ secrets.KEYSTORE_PASSWORD }}
+        shell: bash
 
       - name: Verify keystore.p12 exists in root
         run: |
@@ -56,7 +74,6 @@ jobs:
             exit 1
           fi
         shell: bash
-
 
       - name: Build with Gradle
         run: ./gradlew build -x test
