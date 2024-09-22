@@ -29,6 +29,8 @@ public class RegistrationCommandService {
         // 신청 가능한지 여러 조건 확인
         checkIfSubjectAlreadyRegistered(studentId, lecture.getId());
         checkCourseLimitation(lecture);
+        // TODO 신청 학점 체크
+        checkCreditLimit(lecture);
 
         // 수강신청 저장
         final Registration newRegistration = Registration.builder()
@@ -56,5 +58,12 @@ public class RegistrationCommandService {
         if (lecture.getCurrentNumberOfStudents() >= lecture.getAllowedNumberOfStudents()) {
             throw new CourseAlreadyFulledException(COURSE_ALREADY_FULLED);
         }
+    }
+
+    // TODO 이수가능학점이내 여부 확인
+    private static void checkCreditLimit(Lecture lecture) {
+//        if (student.getPossibleCredits() < student.getAppliedCredits() + lecture.getCurrentNumberOfStudents()) {
+//            throw new CreditExceededException(CREDIT_EXCEEDED);
+//        }
     }
 }
