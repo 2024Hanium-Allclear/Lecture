@@ -4,6 +4,7 @@ import com.allclearlecture.domain.lecture.entity.Lecture;
 import com.allclearlecture.domain.lecture.repository.LectureRepository;
 import com.allclearlecture.domain.registration.entity.Registration;
 import com.allclearlecture.domain.registration.exception.CourseAlreadyFulledException;
+import com.allclearlecture.domain.registration.exception.CourseTimeConflictException;
 import com.allclearlecture.domain.registration.exception.SubjectAlreadyRegisteredException;
 import com.allclearlecture.domain.registration.repository.RegistrationRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,9 @@ public class RegistrationCommandService {
         checkCourseLimitation(lecture);
         // TODO 신청 학점 체크
         checkCreditLimit(lecture);
+
+        final List<Registration> registrations = registrationRepository.findByStudentId(studentId);
+        checkTimetable(lecture.getLectureTime(), registrations);
 
         // 수강신청 저장
         final Registration newRegistration = Registration.builder()
@@ -65,5 +69,45 @@ public class RegistrationCommandService {
 //        if (student.getPossibleCredits() < student.getAppliedCredits() + lecture.getCurrentNumberOfStudents()) {
 //            throw new CreditExceededException(CREDIT_EXCEEDED);
 //        }
+    }
+
+    // 현재 강의 시간이 신청가능한지 확인
+    private void checkTimetable(String currentTimetable, List<Registration> registrations) {
+        if (!registrations.isEmpty()) { // 수강신청 목록이 있다면
+            // 강의 시간이 겹치는 지 확인
+            StringBuilder sb = new StringBuilder();
+            for (Registration r : registrations) {
+                sb.append(r.getLecture().getLectureTime());
+                sb.append(",");
+            }
+            int[] timetableOfCourse = makeIntTimetable(currentTimetable);
+            int[] timetableOfStudent = makeIntTimetable(sb.toString());
+            compareTimetable(timetableOfCourse, timetableOfStudent);
+        }
+    }
+
+    // 비교할 배열로 만들기
+    private int[] makeIntTimetable(String rawTimetable) {
+        enum DayOfWeek { 월, 화, 수, 목, 금, 토, 일 }
+        int[] timetable = new int[7];
+        for (String t : rawTimetable.split(",")) {
+            int i = DayOfWeek.valueOf(t.substring(0, 1)).ordinal();
+            String[] periods = t.substring(2).split(" ");
+            for (String period : periods) {
+                // 비트마스크 사용해 period 번째 비트에 1표시
+                int p = 1 << Integer.parseInt(period);
+                timetable[i] |= p;
+            }
+        }
+        return timetable;
+    }
+
+    // 시간표 비교
+    private static void compareTimetable(int[] timetable1, int[] timetable2) {
+        for (int i = 0; i < 7; i++) {
+            if ((timetable1[i] & timetable2[i]) > 0) { // 겹치는게 있을 경우 &연산시 0보다 큰값이 나옴
+                throw new CourseTimeConflictException(COURSE_TIME_CONFLICT);
+            }
+        }
     }
 }
