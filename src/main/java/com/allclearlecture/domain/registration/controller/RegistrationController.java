@@ -1,5 +1,6 @@
 package com.allclearlecture.domain.registration.controller;
 
+import com.allclearlecture.domain.registration.dto.RegistrationRequestDTO;
 import com.allclearlecture.domain.registration.service.RegistrationCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,14 @@ public class RegistrationController {
     public ResponseEntity<Void> register(@PathVariable Long lectureId) {
         //TODO 사용자 정보 받아오기
         registrationCommandService.createRegistration(1L, lectureId);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    //빠른 수강신청
+    @PostMapping("/quick")
+    public ResponseEntity<Void> quickRegister(@RequestBody final RegistrationRequestDTO request) {
+        //TODO 사용자 정보 받아오기
+        registrationCommandService.createQuickRegistration(1L, request);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

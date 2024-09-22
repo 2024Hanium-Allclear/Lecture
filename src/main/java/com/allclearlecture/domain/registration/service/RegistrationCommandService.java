@@ -2,6 +2,7 @@ package com.allclearlecture.domain.registration.service;
 
 import com.allclearlecture.domain.lecture.entity.Lecture;
 import com.allclearlecture.domain.lecture.repository.LectureRepository;
+import com.allclearlecture.domain.registration.dto.RegistrationRequestDTO;
 import com.allclearlecture.domain.registration.entity.Registration;
 import com.allclearlecture.domain.registration.exception.CourseAlreadyFulledException;
 import com.allclearlecture.domain.registration.exception.CourseTimeConflictException;
@@ -47,6 +48,16 @@ public class RegistrationCommandService {
         lecture.addRegistration();
 
         // TODO 신청 학점 증가
+    }
+
+    //빠른 수강 신청
+    public void createQuickRegistration(Long studentId, RegistrationRequestDTO requestDto) {
+        final Lecture lecture = lectureRepository.findByLectureCodeAndDivision(requestDto.getLectureCode(), requestDto.getDivision()).get(0);
+        final Registration newRegistration = Registration.builder()
+                .studentId(studentId)
+                .lecture(lecture)
+                .build();
+        registrationRepository.save(newRegistration);
     }
 
     // 이미 신청한 교과목인지 확인
