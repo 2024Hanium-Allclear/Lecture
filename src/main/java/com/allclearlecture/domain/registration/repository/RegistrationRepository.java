@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface RegistrationRepository extends JpaRepository<Registration, Long> {
     boolean existsByStudentIdAndLectureId(Long studentId, Long lectureId);
     List<Registration> findByStudentId(Long studentId);
+    Optional<Registration> findByIdAndStudentId(Long registrationId, Long studentId);
 }

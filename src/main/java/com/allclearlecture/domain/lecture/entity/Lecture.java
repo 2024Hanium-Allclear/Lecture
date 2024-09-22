@@ -80,4 +80,7 @@ public class Lecture extends BaseEntity {
         this.currentNumberOfStudents++;
     }
 
+    public void deleteRegistration() {
+        this.currentNumberOfStudents--;
+    }
 }

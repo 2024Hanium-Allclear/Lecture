@@ -29,4 +29,12 @@ public class RegistrationController {
         registrationCommandService.createQuickRegistration(1L, request);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    //수강 취소
+    @PutMapping("/{registrationId}")
+    public ResponseEntity<Void> delete(@PathVariable Long registrationId) {
+        //TODO 사용자 정보 받아오기
+        registrationCommandService.deleteRegistration(registrationId, 1L);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }

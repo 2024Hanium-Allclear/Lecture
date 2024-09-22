@@ -60,6 +60,20 @@ public class RegistrationCommandService {
         registrationRepository.save(newRegistration);
     }
 
+    //수강 취소
+    public void deleteRegistration(Long registrationId, Long studentId) {
+        // 신청한 학생이 맞는지 확인
+        Registration registration = registrationRepository.findByIdAndStudentId(registrationId, studentId).get();
+
+        //수강신청 삭제
+        registrationRepository.deleteById(registrationId);
+
+        // 현재 수강 신청 인원 감소
+        registration.getLecture().deleteRegistration();
+
+        // TODO 신청 학점 감소
+    }
+
     // 이미 신청한 교과목인지 확인
     private void checkIfSubjectAlreadyRegistered(Long studentId, Long lectureId) {
         boolean registered = registrationRepository.existsByStudentIdAndLectureId(studentId, lectureId);
