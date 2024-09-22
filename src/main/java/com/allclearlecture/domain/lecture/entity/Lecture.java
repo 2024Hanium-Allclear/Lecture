@@ -75,4 +75,12 @@ public class Lecture extends BaseEntity {
         this.setCreatedDate(createdDate);
         this.setModifiedDate(modifiedDate);
     }
+
+    public void addRegistration() {
+        this.currentNumberOfStudents++;
+    }
+
+    public void deleteRegistration() {
+        this.currentNumberOfStudents--;
+    }
 }
