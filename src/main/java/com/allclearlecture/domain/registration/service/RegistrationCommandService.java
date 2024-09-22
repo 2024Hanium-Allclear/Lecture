@@ -6,6 +6,7 @@ import com.allclearlecture.domain.registration.dto.RegistrationRequestDTO;
 import com.allclearlecture.domain.registration.entity.Registration;
 import com.allclearlecture.domain.registration.exception.CourseAlreadyFulledException;
 import com.allclearlecture.domain.registration.exception.CourseTimeConflictException;
+import com.allclearlecture.domain.registration.exception.NoAuthorityToRegistrationException;
 import com.allclearlecture.domain.registration.exception.SubjectAlreadyRegisteredException;
 import com.allclearlecture.domain.registration.repository.RegistrationRepository;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +64,8 @@ public class RegistrationCommandService {
     //수강 취소
     public void deleteRegistration(Long registrationId, Long studentId) {
         // 신청한 학생이 맞는지 확인
-        Registration registration = registrationRepository.findByIdAndStudentId(registrationId, studentId).get();
+        Registration registration = registrationRepository.findByIdAndStudentId(registrationId, studentId)
+                .orElseThrow(() -> new NoAuthorityToRegistrationException(NO_AUTHORITY_TO_REGISTRATION));
 
         //수강신청 삭제
         registrationRepository.deleteById(registrationId);
