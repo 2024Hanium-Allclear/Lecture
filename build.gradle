@@ -23,6 +23,7 @@ repositories {
     mavenCentral()
 }
 
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
@@ -40,6 +41,12 @@ dependencies {
 
     // Jakarta Validation API for validation exceptions
     implementation 'jakarta.validation:jakarta.validation-api:3.0.0'
+<<<<<<< HEAD
+
+    // Kafka
+    implementation 'org.apache.kafka:kafka-clients:3.4.0' // Updated version
+=======
+>>>>>>> 7dbfb5610c972733c71323eddbe8d3868fd0d67a
 }
 
 tasks.named('test') {
