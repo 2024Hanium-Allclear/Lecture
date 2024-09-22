@@ -3,6 +3,7 @@ package com.allclearlecture.domain.registration.service;
 import com.allclearlecture.domain.lecture.entity.Lecture;
 import com.allclearlecture.domain.lecture.repository.LectureRepository;
 import com.allclearlecture.domain.registration.entity.Registration;
+import com.allclearlecture.domain.registration.exception.CourseAlreadyFulledException;
 import com.allclearlecture.domain.registration.exception.SubjectAlreadyRegisteredException;
 import com.allclearlecture.domain.registration.repository.RegistrationRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class RegistrationCommandService {
 
         // 신청 가능한지 여러 조건 확인
         checkIfSubjectAlreadyRegistered(studentId, lecture.getId());
+        checkCourseLimitation(lecture);
 
         // 수강신청 저장
         final Registration newRegistration = Registration.builder()
@@ -49,4 +51,10 @@ public class RegistrationCommandService {
         }
     }
 
+    // 수강 정원 이내 인지 확인
+    private static void checkCourseLimitation(Lecture lecture) {
+        if (lecture.getCurrentNumberOfStudents() >= lecture.getAllowedNumberOfStudents()) {
+            throw new CourseAlreadyFulledException(COURSE_ALREADY_FULLED);
+        }
+    }
 }
